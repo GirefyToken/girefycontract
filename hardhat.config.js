@@ -32,7 +32,14 @@ module.exports = {
     tests: "./test",
   },
   solidity: {
-    version: "0.8.17",
+    version: "0.8.20",
+    defaultNetwork: 'sepolia',
+    networks: {
+      hardhat:{
+        url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+        accounts: [`0x${process.env.SEPOLIA_PRIVATE_KEY}`]
+      }
+    },
     settings: {
       optimizer: {
         enabled: true,

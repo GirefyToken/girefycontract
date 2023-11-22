@@ -1,6 +1,11 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+// contracts/GLDToken.sol
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-contract MyContract {
-    constructor() {}
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract Girefy is ERC20 {
+    constructor(uint256 initialSupply) ERC20("Girefy", "GRF") {
+        _mint(msg.sender, initialSupply);
+    }
 }
