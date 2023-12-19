@@ -22,7 +22,8 @@ contract Girefy is ERC20, ERC20Pausable, Ownable, ERC20Permit {
     }
 
     function mint(address to, uint256 amount) public onlyOwner{
-        _mint(to, amount*(10**18));
+        _mint(to, amount);
+        //* 10 ** decimals()
     }
 
     // The following functions are overrides required by Solidity.

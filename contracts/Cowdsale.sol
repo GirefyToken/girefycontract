@@ -2,19 +2,25 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./PriceFeed.sol";
 
-contract Crowdsale {
+
+contract Crowdsale is Ownable,PriceFeed{
 
     // The token being sold
     ERC20 private token;
+
+    //usdt contract
+    ERC20 private usdt
 
     // Address where funds are collected
     address payable private wallet;
 
     // How many token units a buyer gets per wei.
     // The rate is the conversion between wei and the smallest and indivisible token unit.
-    // So, if you are using a rate of 1 with a ERC20Detailed token with 3 decimals called TOK
-    // 1 wei will give you 1 unit, or 0.001 TOK.
+
+    //this is for 1 usd = rate Token
     uint256 private rate;
 
     // Amount of wei raised
@@ -56,11 +62,13 @@ contract Crowdsale {
      * @param _wallet Address where collected funds will be forwarded to
      * @param _token Address of the token being sold
      */
-    constructor (uint256 _rate, address payable _wallet, ERC20 _token) {
+    constructor (uint256 _rate, address payable _wallet, ERC20 _token) 
+    Ownable(_wallet)
+    {
         require(_rate > 0, "Crowdsale: rate is 0");
         require(_wallet != address(0), "Crowdsale: wallet is the zero address");
         require(address(_token) != address(0), "Crowdsale: token is the zero address");
-
+        
         rate = _rate;
         wallet = _wallet;
         token = _token;
@@ -199,7 +207,8 @@ contract Crowdsale {
      * @return Number of tokens that can be purchased with the specified _weiAmount
      */
     function _getTokenAmount(uint256 weiAmount) internal view returns (uint256) {
-        return weiAmount*rate;
+        uint ethRate = getEthRate();
+        return weiAmount*ethRate;
     }
 
     /**
@@ -207,6 +216,26 @@ contract Crowdsale {
      */
     function _forwardFunds() internal {
         wallet.transfer(msg.value);
+    }
+
+    /**
+     * @dev allow admin to update the crowdsale stage
+     * @param _stage Crowdsale stage 
+     */
+    function setCrowdsaleStage(uint _stage) public onlyOwner{
+        if(uint(CrowdsaleStage.PreIco) == _stage){
+            stage = CrowdsaleStage.PreIco;
+        }
+        else if (uint(CrowdsaleStage.Ico)== _stage){
+            stage = CrowdsaleStage.Ico;
+        }
+    }
+
+    /**
+     * @return stage crowdsale stage.
+     */
+    function getCrowdsaleStage() public view returns (uint256) {
+        return uint(stage);
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -239,7 +268,7 @@ contract Crowdsale {
         weiRaised +=weiAmount;
 
         //
-        contributions[beneficiary]= tokens;
+        contributions[beneficiary]+= tokens;
 
         _updatePurchasingState(beneficiary, weiAmount);
 
@@ -267,4 +296,16 @@ contract Crowdsale {
         //_forwardFunds();
     }
 
+
+    //////////////////////////////////////////////////////////////////////
+    /* get eth  */
+    function getEthPrice() public view returns (int){
+        int eth = getChainlinkDataFeedLatestAnswer();
+        return eth;
+    } 
+    
+    function getEthRate() public view returns (uint){
+        int eth = getChainlinkDataFeedLatestAnswer();
+        return rate*uint(eth/10**8);
+    }    
 }
