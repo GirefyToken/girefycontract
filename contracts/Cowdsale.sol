@@ -12,7 +12,7 @@ contract Crowdsale is Ownable,PriceFeed{
     ERC20 private token;
 
     //usdt contract
-    ERC20 private usdt
+    IERC20 private usdt= IERC20(address(0x76a41272B137C4A440b4eF83feAe6972cd79e6c7));
 
     // Address where funds are collected
     address payable private wallet;
@@ -30,11 +30,22 @@ contract Crowdsale is Ownable,PriceFeed{
     //presale contributor
     mapping (address => uint256) public contributions;
 
+    //list of contributor
+    address [] public contributorList;
+    //check if contributor is listed
+    mapping (address => bool) public contributorExist;
+
     //Crowdsale Stages
     enum CrowdsaleStage {PreIco, Ico}
 
     //default presale
     CrowdsaleStage public stage = CrowdsaleStage.PreIco;
+
+    // Modifier to check token allowance
+    modifier checkAllowance(uint amount) {
+        require(token.allowance(msg.sender, wallet) >= amount, "Error allowance");
+        _;
+    }
 
     /**
      * Event for token purchase logging
@@ -44,6 +55,8 @@ contract Crowdsale is Ownable,PriceFeed{
      * @param amount amount of tokens purchased
      */
     event TokensPurchased(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+    
+    event TokensPurchasedWithUsdt(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
     
     /**
@@ -87,7 +100,7 @@ contract Crowdsale is Ownable,PriceFeed{
     /**
      * @return the token being sold.
      */
-    function geToken() public view returns (ERC20) {
+    function getToken() public view returns (ERC20) {
         return token;
     }
 
@@ -143,6 +156,34 @@ contract Crowdsale is Ownable,PriceFeed{
         _postValidatePurchase(beneficiary, weiAmount);
     }
 
+
+     /**
+     * @dev low level token purchase ***DO NOT OVERRIDE***
+     * This function has a non-reentrancy guard, so it shouldn't be called by
+     * another `nonReentrant` function.
+     * @param beneficiary Recipient of the token purchase
+     */
+    function buyTokensWithUsdt(address beneficiary,uint256 amount) public checkAllowance(amount) {
+        uint256 weiAmount = amount;
+
+
+        // calculate token amount to be created
+        uint256 tokens = _getTokenAmountWithUsdt(weiAmount);
+
+        // update state
+        weiAmount=convertUsdtToWei(weiAmount);
+        weiRaised +=weiAmount;
+
+        _deliverTokens(beneficiary, tokens);
+        emit TokensPurchasedWithUsdt( msg.sender, beneficiary, amount, tokens);
+
+        _updatePurchasingState(beneficiary, weiAmount);
+
+        _forwardUsdtFunds(beneficiary,amount);
+        _postValidatePurchase(beneficiary, weiAmount);
+    }
+
+   
     /**
      * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
      * Use `super` in contracts that inherit from Crowdsale to extend their validations.
@@ -181,6 +222,7 @@ contract Crowdsale is Ownable,PriceFeed{
         //token.transferFrom(wallet,beneficiary,tokenAmount);
     }
 
+
     /**
      * @dev Executed when a purchase has been validated and is ready to be executed. Doesn't necessarily emit/send
      * tokens.
@@ -211,6 +253,15 @@ contract Crowdsale is Ownable,PriceFeed{
         return weiAmount*ethRate;
     }
 
+    function _getTokenAmountWithUsdt(uint256 weiAmount) internal view returns (uint256) {
+        return weiAmount*rate;
+    }
+
+    function convertUsdtToWei(uint256 usdtAmount) internal view returns (uint256){
+        uint ethRate = getEthRate();
+        return usdtAmount*ethRate;
+    }
+
     /**
      * @dev Determines how ETH is stored/forwarded on purchases.
      */
@@ -218,6 +269,9 @@ contract Crowdsale is Ownable,PriceFeed{
         wallet.transfer(msg.value);
     }
 
+    function _forwardUsdtFunds(address sender, uint256 amount) internal {
+        usdt.transferFrom(sender,wallet,amount);
+    }
     /**
      * @dev allow admin to update the crowdsale stage
      * @param _stage Crowdsale stage 
@@ -251,6 +305,10 @@ contract Crowdsale is Ownable,PriceFeed{
         return contributions[_beneficiary];
     }
 
+     function getContributors() public view returns(address[] memory){
+        return contributorList;
+    }
+
     /**
      * @dev Buy token on presale
      * @param beneficiary Recipient of the token purchase
@@ -267,12 +325,50 @@ contract Crowdsale is Ownable,PriceFeed{
         // update state
         weiRaised +=weiAmount;
 
-        //
+        //add contributor on list
+        if(!contributorExist[beneficiary]){
+            contributorList.push(beneficiary);
+            contributorExist[beneficiary] = true;
+        }
+
         contributions[beneficiary]+= tokens;
 
         _updatePurchasingState(beneficiary, weiAmount);
 
         _forwardFunds();
+        _postValidatePurchase(beneficiary, weiAmount);
+    }
+
+    /**
+     * @dev Buy token on presale
+     * @param beneficiary Recipient of the token purchase
+     */
+    function buyTokenWithUsdtOnPresale(address beneficiary, uint256 amount) public checkAllowance(amount){
+        uint256 weiAmount = amount;
+
+
+
+        // calculate token amount to be created
+        uint256 tokens = _getTokenAmountWithUsdt(weiAmount);
+
+        // update state
+          //add contributor on list
+        if(!contributorExist[beneficiary]){
+            contributorList.push(beneficiary);
+            contributorExist[beneficiary] = true;
+        }
+
+        // update state
+        weiAmount=convertUsdtToWei(weiAmount);
+        weiRaised +=weiAmount;
+
+        
+        contributions[beneficiary]+= tokens;
+
+        _updatePurchasingState(beneficiary, weiAmount);
+
+        _forwardUsdtFunds(beneficiary,amount);
+
         _postValidatePurchase(beneficiary, weiAmount);
     }
 
