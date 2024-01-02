@@ -494,4 +494,8 @@ contract Crowdsale is Ownable{
     function crowdsaleUsdtBalance() public view returns(uint256){
         return usdt.balanceOf(address(this));
     }
+
+    function crowdsaleTokenBalance() public view returns(uint256){
+        return token.balanceOf(address(this));
+    }
 }
