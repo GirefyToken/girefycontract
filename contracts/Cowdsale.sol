@@ -12,7 +12,7 @@ contract Crowdsale is Ownable{
     ERC20 private token;
 
     //usdt contract
-    IERC20 private usdt= IERC20(address(0x3786495F5d8a83B7bacD78E2A0c61ca20722Cce3));
+    IERC20 private usdt= IERC20(address(0x900101d06A7426441Ae63e9AB3B9b0F63Be145F1));
 
     //address usdt on etherium  = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 
@@ -47,8 +47,19 @@ contract Crowdsale is Ownable{
     //token bought
     uint256 private tokenSold;
 
-    //presale contributor
+    //contributor in token
     mapping (address => uint256) public contributions;
+
+    //wei contributor
+    mapping (address => uint256) public weiContributions;
+
+    //usdt contributor
+    mapping (address => uint256) public usdtContributions;
+
+    //fund by contributor
+    mapping (address => uint256) public fundsContributions;
+
+
 
     //list of contributor
     address [] public contributorList;
@@ -217,6 +228,17 @@ contract Crowdsale is Ownable{
         //add as token sold
         tokenSold +=tokens;
 
+
+        //add contributor on list
+        if(!contributorExist[beneficiary]){
+            contributorList.push(beneficiary);
+            contributorExist[beneficiary] = true;
+        }
+
+        contributions[beneficiary]+= tokens;
+        weiContributions[beneficiary]+=weiAmount;
+        fundsContributions[beneficiary]+=usdtConverted;
+
         _processPurchase(beneficiary, tokens);
         emit TokensPurchased( msg.sender, beneficiary, weiAmount, tokens);
 
@@ -243,9 +265,22 @@ contract Crowdsale is Ownable{
         // update state
         usdtRaised +=usdtAmount;
         fundsRaised +=usdtAmount;
+        
 
         //add as token sold
         tokenSold +=tokens;
+
+
+        //add contributor on list
+        if(!contributorExist[beneficiary]){
+            contributorList.push(beneficiary);
+            contributorExist[beneficiary] = true;
+        }
+
+
+        contributions[beneficiary]+= tokens;
+        weiContributions[beneficiary]+=usdtAmount;
+        fundsContributions[beneficiary]+=usdtAmount;
 
         _deliverTokens(beneficiary, tokens);
         emit TokensPurchasedWithUsdt( msg.sender, beneficiary, amount, tokens);
@@ -410,6 +445,8 @@ contract Crowdsale is Ownable{
         }
 
         contributions[beneficiary]+= tokens;
+        weiContributions[beneficiary]+=weiAmount;
+        fundsContributions[beneficiary]+=usdtConverted;
 
         _updatePurchasingState(beneficiary, weiAmount);
 
@@ -446,6 +483,8 @@ contract Crowdsale is Ownable{
 
         
         contributions[beneficiary]+= tokens;
+        weiContributions[beneficiary]+=usdtAmount;
+        fundsContributions[beneficiary]+=usdtAmount;
 
         _updatePurchasingState(beneficiary, usdtAmount);
 
