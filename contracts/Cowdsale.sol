@@ -412,6 +412,18 @@ contract Crowdsale is Ownable{
         return contributions[_beneficiary];
     }
 
+    function getUserWeiContribution(address _beneficiary) public view returns (uint256){
+        return weiContributions[_beneficiary];
+    }
+
+    function getUserUsdtContribution(address _beneficiary) public view returns (uint256){
+        return usdtContributions[_beneficiary];
+    }
+
+    function getUserFundContribution(address _beneficiary) public view returns (uint256){
+        return fundsContributions[_beneficiary];
+    }
+
      function getContributors() public view returns(address[] memory){
         return contributorList;
     }
