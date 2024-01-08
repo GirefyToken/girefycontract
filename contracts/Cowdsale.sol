@@ -12,7 +12,7 @@ contract Crowdsale is Ownable{
     ERC20 private token;
 
     //usdt contract
-    IERC20 private usdt= IERC20(address(0x900101d06A7426441Ae63e9AB3B9b0F63Be145F1));
+    IERC20 private usdt= IERC20(address(0x3786495F5d8a83B7bacD78E2A0c61ca20722Cce3));
 
     //address usdt on etherium  = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 
@@ -279,7 +279,7 @@ contract Crowdsale is Ownable{
 
 
         contributions[beneficiary]+= tokens;
-        weiContributions[beneficiary]+=usdtAmount;
+        usdtContributions[beneficiary]+=usdtAmount;
         fundsContributions[beneficiary]+=usdtAmount;
 
         _deliverTokens(beneficiary, tokens);
@@ -424,7 +424,7 @@ contract Crowdsale is Ownable{
         return fundsContributions[_beneficiary];
     }
 
-     function getContributors() public view returns(address[] memory){
+    function getContributors() public view returns(address[] memory){
         return contributorList;
     }
 
@@ -495,7 +495,7 @@ contract Crowdsale is Ownable{
 
         
         contributions[beneficiary]+= tokens;
-        weiContributions[beneficiary]+=usdtAmount;
+        usdtContributions[beneficiary]+=usdtAmount;
         fundsContributions[beneficiary]+=usdtAmount;
 
         _updatePurchasingState(beneficiary, usdtAmount);
