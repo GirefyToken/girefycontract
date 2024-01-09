@@ -106,7 +106,7 @@ contract Crowdsale is Ownable{
      * @param _wallet Address where collected funds will be forwarded to
      * @param _token Address of the token being sold
      */
-    constructor (uint256 _rate, address payable _wallet, ERC20 _token) 
+    constructor (uint256 _rate,uint256 _cap, address payable _wallet, ERC20 _token) 
     Ownable(_wallet)
     {
         require(_rate > 0, "Crowdsale: rate is 0");
@@ -116,6 +116,8 @@ contract Crowdsale is Ownable{
         rate = _rate;
         wallet = _wallet;
         token = _token;
+        timeCrowdsale= block.timestamp+86400;
+        investorTargetCap= _cap*10**6;
     }
 
     /**
