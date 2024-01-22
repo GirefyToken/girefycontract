@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
 contract Girefy is ERC20, ERC20Pausable, Ownable, ERC20Permit {
     constructor()
-        ERC20("Girefy", "GRF")
+        ERC20("sBITJOY", "sBITJOY")
         Ownable(msg.sender)
-        ERC20Permit("Girefy")
+        ERC20Permit("sBITJOY")
     {}
 
     function pause() public onlyOwner {

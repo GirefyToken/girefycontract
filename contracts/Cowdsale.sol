@@ -12,13 +12,18 @@ contract Crowdsale is Ownable{
     ERC20 private token;
 
     //usdt contract
-    IERC20 private usdt= IERC20(address(0x3786495F5d8a83B7bacD78E2A0c61ca20722Cce3));
+    IERC20 private usdt= IERC20(address(0x7ef95a0FEE0Dd31b22626fA2e10Ee6A223F8a684));
+    uint usdtDecimal = 18;
+    //usdt decimal= 6 for core
 
     //address usdt on etherium  = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 
     //adress usdt on core blockchain mainet= 0x900101d06A7426441Ae63e9AB3B9b0F63Be145F1
 
     //adress susdt on core blockchain testnet = 0x3786495F5d8a83B7bacD78E2A0c61ca20722Cce3
+
+    // address usdt on BNB smart chain mainet = 0x55d398326f99059ff775485246999027b3197955
+    // address usdt on BNB smart chain testnet = 0x7ef95a0FEE0Dd31b22626fA2e10Ee6A223F8a684
 
     // Address where funds are collected
     address payable private wallet;
@@ -67,10 +72,10 @@ contract Crowdsale is Ownable{
     mapping (address => bool) public contributorExist;
 
     //Crowdsale Stages
-    enum CrowdsaleStage {Ico,PreIco}
+    enum CrowdsaleStage {Ico,PreIco,Community}
 
     //default presale
-    CrowdsaleStage public stage = CrowdsaleStage.PreIco;
+    CrowdsaleStage public stage = CrowdsaleStage.Community;
 
     // Modifier to check token allowance
     modifier checkAllowance(uint amount) {
@@ -117,7 +122,7 @@ contract Crowdsale is Ownable{
         wallet = _wallet;
         token = _token;
         timeCrowdsale= block.timestamp+86400;
-        investorTargetCap= _cap*10**6;
+        investorTargetCap= _cap*10**usdtDecimal;
     }
 
     /**
@@ -360,15 +365,15 @@ contract Crowdsale is Ownable{
      */
     function _getTokenAmount(uint256 weiAmount, uint256 coreRate) internal view returns (uint256) {
         //uint ethRate = getEthRate();
-        return (weiAmount/10**4)*rate*(coreRate/10**14);
+        return (weiAmount/10**5)*rate*(coreRate/10**13);
     }
 
     function _getTokenAmountWithUsdt(uint256 weiAmount) internal view returns (uint256) {
-        return (weiAmount*10**12)*rate;
+        return (weiAmount*10**(18-usdtDecimal))*rate;
     }
 
-    function _convertCoretoUsdt(uint256 weiAmount, uint256 coreRate) internal pure returns (uint256) {
-        return (weiAmount/10**16)*(coreRate/10**14);
+    function _convertCoretoUsdt(uint256 weiAmount, uint256 coreRate) internal view returns (uint256) {
+        return (weiAmount/10**(23-usdtDecimal))*(coreRate/10**13);
     }
 
     /**
@@ -391,6 +396,9 @@ contract Crowdsale is Ownable{
         }
         else if (uint(CrowdsaleStage.Ico)== _stage){
             stage = CrowdsaleStage.Ico;
+        }
+        else if(uint(CrowdsaleStage.Community) == _stage){
+            stage = CrowdsaleStage.Community;
         }
     }
 
