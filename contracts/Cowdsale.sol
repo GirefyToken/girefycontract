@@ -12,7 +12,7 @@ contract Crowdsale is Ownable{
     ERC20 private token;
 
     //usdt contract
-    IERC20 private usdt= IERC20(address(0x7ef95a0FEE0Dd31b22626fA2e10Ee6A223F8a684));
+    IERC20 private usdt= IERC20(address(0x337610d27c682E347C9cD60BD4b3b107C9d34dDd));
     uint usdtDecimal = 18;
     //usdt decimal= 6 for core
 
@@ -23,7 +23,7 @@ contract Crowdsale is Ownable{
     //adress susdt on core blockchain testnet = 0x3786495F5d8a83B7bacD78E2A0c61ca20722Cce3
 
     // address usdt on BNB smart chain mainet = 0x55d398326f99059ff775485246999027b3197955
-    // address usdt on BNB smart chain testnet = 0x7ef95a0FEE0Dd31b22626fA2e10Ee6A223F8a684
+    // address usdt on BNB smart chain testnet = 0x337610d27c682E347C9cD60BD4b3b107C9d34dDd
 
     // Address where funds are collected
     address payable private wallet;
@@ -33,6 +33,15 @@ contract Crowdsale is Ownable{
 
     //this is for 1 usd = rate Token
     uint256 private rate;
+
+    //this is for 1 usd = rate Token
+    uint256 private firstRate;
+
+    //this is for 1 usd = rate Token
+    uint256 private secondRate;
+
+    //this is for 1 usd = rate Token
+    uint256 private thirdRate;
 
     // Amount of wei raised
     uint256 private weiRaised;
@@ -46,8 +55,25 @@ contract Crowdsale is Ownable{
     //limit time for crowdsale
     uint private timeCrowdsale;
 
-    //targeted fund to get
+    //limit time for crowdsale
+    uint private secondTimeCrowdsale;
+
+    //limit time for crowdsale
+    uint private thirdTimeCrowdsale;
+
+    //targeted token to be sold to get
     uint256 private investorTargetCap;
+
+    //
+    uint256 private firstInvestorTargetCap;
+
+
+    //targeted token to be sold to get on round 2
+    uint256 private secondInvestorTargetCap;
+
+
+    //targeted token to be sold to get on round 2
+    uint256 private thirdInvestorTargetCap;
 
     //token bought
     uint256 private tokenSold;
@@ -72,7 +98,7 @@ contract Crowdsale is Ownable{
     mapping (address => bool) public contributorExist;
 
     //Crowdsale Stages
-    enum CrowdsaleStage {Ico,PreIco,Community}
+    enum CrowdsaleStage {Ico,PreIco,SecondPreIco,ThirdPreIco,Community}
 
     //default presale
     CrowdsaleStage public stage = CrowdsaleStage.Community;
@@ -80,6 +106,28 @@ contract Crowdsale is Ownable{
     // Modifier to check token allowance
     modifier checkAllowance(uint amount) {
         require(usdt.allowance(msg.sender, address(this)) >= amount, "Error allowance");
+        _;
+    }
+
+    //modifier to check if he can buy
+    //balanceOf(address(this))>=amount
+    modifier checkIfEnoughBalance(uint amount) {
+        require(token.balanceOf(address(this)) >= amount, "Not enough balance in the contract in the contract");
+        _;
+    }
+
+    //modifier to check if can buy on presale PreIco,SecondPreIco,ThirdPreIco
+    //
+    modifier checkIfEnoughBalanceForCurrentStage(uint amount) {
+        if( stage == CrowdsaleStage.PreIco){
+            require((firstInvestorTargetCap-tokenSold) >= amount, "all token is already sold in this stage");
+        }
+        else if( stage == CrowdsaleStage.SecondPreIco){
+            require((secondInvestorTargetCap-tokenSold) >= amount, "all token is already sold in this stage");
+        }
+        else if( stage == CrowdsaleStage.ThirdPreIco){
+            require((secondInvestorTargetCap-tokenSold) >= amount, "all token is already sold in this stage");
+        }
         _;
     }
 
@@ -122,7 +170,9 @@ contract Crowdsale is Ownable{
         wallet = _wallet;
         token = _token;
         timeCrowdsale= block.timestamp+86400;
-        investorTargetCap= _cap*10**usdtDecimal;
+        secondTimeCrowdsale=timeCrowdsale + 30 days;
+        thirdTimeCrowdsale= secondTimeCrowdsale + 30 days;
+        investorTargetCap= _cap*10**18;
     }
 
     /**
@@ -164,6 +214,18 @@ contract Crowdsale is Ownable{
         rate=_rate;
     }
 
+    function setStageRate(uint _stage, uint256 _rate) public onlyOwner{
+        if( _stage == 1){
+            firstRate=_rate;
+        }
+        else if (_stage == 2){
+            secondRate = _rate;
+        }
+        else if (_stage == 3){
+            thirdRate = _rate;
+        }
+    }
+
     /**
      * @return the amount of wei raised.
      */
@@ -190,8 +252,16 @@ contract Crowdsale is Ownable{
         return investorTargetCap;
     }
 
-    function setInvestorTargetCap(uint256 _cap) public onlyOwner{
-        investorTargetCap=_cap;
+    function setInvestorTargetCap(uint _stage,uint256 _cap) public onlyOwner{
+        if(_stage == 1){
+            investorTargetCap=_cap;
+        }
+        else if ( _stage == 2 ){
+            secondInvestorTargetCap = _cap;
+        }
+        else if ( _stage == 3 ) {
+            thirdInvestorTargetCap = _cap;
+        }
     }
 
     /**
@@ -208,8 +278,16 @@ contract Crowdsale is Ownable{
         return timeCrowdsale;
     }
 
-    function setTimeCrowdsale(uint256 _timeCrowdsale) public onlyOwner{
-        timeCrowdsale=_timeCrowdsale;
+    function setTimeCrowdsale(uint256 _timeCrowdsale, uint256 _stage) public onlyOwner{
+        if(_stage == 1){
+            timeCrowdsale=_timeCrowdsale;
+        }
+        else if (_stage == 2){
+            secondTimeCrowdsale = _timeCrowdsale;
+        }
+        else {
+            thirdInvestorTargetCap = _timeCrowdsale;
+        }
     }
 
     /**
@@ -277,6 +355,8 @@ contract Crowdsale is Ownable{
         //add as token sold
         tokenSold +=tokens;
 
+        //prevalidate
+        //_preValidatePurchase(beneficiary,tokens)
 
         //add contributor on list
         if(!contributorExist[beneficiary]){
@@ -313,6 +393,12 @@ contract Crowdsale is Ownable{
         require(weiAmount != 0, "Crowdsale: weiAmount is 0");
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     }
+/* checkIfEnoughBalance(weiAmount)
+    function _preValidatePurchaseOnPresale (address beneficiary, uint256 weiAmount) internal view checkIfEnoughBalanceForCurrentStage(weiAmount){
+        require(beneficiary != address(0), "Crowdsale: beneficiary is the zero address");
+        require(weiAmount != 0, "Crowdsale: weiAmount is 0");
+        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+    }*/
 
     /**
      * @dev Validation of an executed purchase. Observe state and use revert statements to undo rollback when valid
@@ -393,9 +479,18 @@ contract Crowdsale is Ownable{
     function setCrowdsaleStage(uint _stage) public onlyOwner{
         if(uint(CrowdsaleStage.PreIco) == _stage){
             stage = CrowdsaleStage.PreIco;
+            rate = firstRate;
         }
         else if (uint(CrowdsaleStage.Ico)== _stage){
             stage = CrowdsaleStage.Ico;
+        }
+        else if (uint(CrowdsaleStage.SecondPreIco)== _stage){
+            stage = CrowdsaleStage.SecondPreIco;
+            rate = secondRate;
+        }
+        else if (uint(CrowdsaleStage.ThirdPreIco)== _stage){
+            stage = CrowdsaleStage.ThirdPreIco;
+            rate = thirdRate;
         }
         else if(uint(CrowdsaleStage.Community) == _stage){
             stage = CrowdsaleStage.Community;
