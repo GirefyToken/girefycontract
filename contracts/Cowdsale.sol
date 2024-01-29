@@ -64,10 +64,6 @@ contract Crowdsale is Ownable{
     //targeted token to be sold to get
     uint256 private investorTargetCap;
 
-    //
-    uint256 private firstInvestorTargetCap;
-
-
     //targeted token to be sold to get on round 2
     uint256 private secondInvestorTargetCap;
 
@@ -120,7 +116,7 @@ contract Crowdsale is Ownable{
     //
     modifier checkIfEnoughBalanceForCurrentStage(uint amount) {
         if( stage == CrowdsaleStage.PreIco){
-            require((firstInvestorTargetCap-tokenSold) >= amount, "all token is already sold in this stage");
+            require((investorTargetCap-tokenSold) >= amount, "all token is already sold in this stage");
         }
         else if( stage == CrowdsaleStage.SecondPreIco){
             require((secondInvestorTargetCap-tokenSold) >= amount, "all token is already sold in this stage");
@@ -210,6 +206,19 @@ contract Crowdsale is Ownable{
         return rate;
     }
 
+    function getFirstRate() public view returns (uint256) {
+        return firstRate;
+    }
+
+    function getSecondRate() public view returns (uint256) {
+        return secondRate;
+    }
+
+    function getThirdRate() public view returns (uint256) {
+        return thirdRate;
+    }
+
+
     function setRate(uint256 _rate) public onlyOwner{
         rate=_rate;
     }
@@ -252,6 +261,14 @@ contract Crowdsale is Ownable{
         return investorTargetCap;
     }
 
+    function getSecondInvestorTargetCap() public view returns (uint256) {
+        return secondInvestorTargetCap;
+    }
+
+    function getThirdInvestorTargetCap() public view returns (uint256) {
+        return thirdInvestorTargetCap;
+    }
+
     function setInvestorTargetCap(uint _stage,uint256 _cap) public onlyOwner{
         if(_stage == 1){
             investorTargetCap=_cap;
@@ -278,6 +295,14 @@ contract Crowdsale is Ownable{
         return timeCrowdsale;
     }
 
+    function getSecondTimeCrowdsale() public view returns (uint) {
+        return secondTimeCrowdsale;
+    }
+
+    function getThirdTimeCrowdsale() public view returns (uint) {
+        return thirdTimeCrowdsale;
+    }
+
     function setTimeCrowdsale(uint256 _timeCrowdsale, uint256 _stage) public onlyOwner{
         if(_stage == 1){
             timeCrowdsale=_timeCrowdsale;
@@ -286,7 +311,7 @@ contract Crowdsale is Ownable{
             secondTimeCrowdsale = _timeCrowdsale;
         }
         else {
-            thirdInvestorTargetCap = _timeCrowdsale;
+            thirdTimeCrowdsale = _timeCrowdsale;
         }
     }
 
