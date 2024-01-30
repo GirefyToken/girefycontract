@@ -163,6 +163,7 @@ contract Crowdsale is Ownable{
         require(address(_token) != address(0), "Crowdsale: token is the zero address");
         
         rate = _rate;
+        firstRate= _rate;
         wallet = _wallet;
         token = _token;
         timeCrowdsale= block.timestamp+86400;
