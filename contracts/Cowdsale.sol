@@ -93,6 +93,11 @@ contract Crowdsale is Ownable{
     //check if contributor is listed
     mapping (address => bool) public contributorExist;
 
+    //vesting
+    uint256 vestingRate; 
+    mapping (address => uint256) public vestingRound;
+    mapping (address => uint256) public vestingTime;
+
     //Crowdsale Stages
     enum CrowdsaleStage {Ico,PreIco,SecondPreIco,ThirdPreIco,Community}
 
@@ -146,15 +151,15 @@ contract Crowdsale is Ownable{
      * @param amount amount of tokens claimed
      */
     event TokensClaimed(address indexed purchaser, address indexed beneficiary, uint256 amount);
-
-    /**
+/*
+    
      * @param _rate Number of token units a buyer gets per wei
      * @dev The rate is the conversion between wei and the smallest and indivisible
      * token unit. So, if you are using a rate of 1 with a ERC20Detailed token
      * with 3 decimals called TOK, 1 wei will give you 1 unit, or 0.001 TOK.
      * @param _wallet Address where collected funds will be forwarded to
      * @param _token Address of the token being sold
-     */
+     
     constructor (uint256 _rate,uint256 _cap, address payable _wallet, ERC20 _token) 
     Ownable(_wallet)
     {
@@ -170,6 +175,31 @@ contract Crowdsale is Ownable{
         secondTimeCrowdsale=timeCrowdsale + 30 days;
         thirdTimeCrowdsale= secondTimeCrowdsale + 30 days;
         investorTargetCap= _cap*10**18;
+    }
+*/
+    //only constructor for bitjoy
+    constructor (address payable _wallet, ERC20 _token) 
+    Ownable(_wallet)
+    {
+        require(_wallet != address(0), "Crowdsale: wallet is the zero address");
+        require(address(_token) != address(0), "Crowdsale: token is the zero address");
+
+        rate = 45*10**13;
+        firstRate= 45*10**13;
+        secondRate= 5*10**14;
+        thirdRate = 55*10**13;
+
+        wallet = _wallet;
+        token = _token;
+
+        timeCrowdsale= block.timestamp+86400;
+        secondTimeCrowdsale=timeCrowdsale + 30 days;
+        thirdTimeCrowdsale= secondTimeCrowdsale + 30 days;
+
+        investorTargetCap= 2234400000*10**18;
+        secondInvestorTargetCap=2713200000*10**18;
+        thirdInvestorTargetCap=3032400000*10**18;
+
     }
 
     /**
@@ -477,15 +507,19 @@ contract Crowdsale is Ownable{
      */
     function _getTokenAmount(uint256 weiAmount, uint256 coreRate) internal view returns (uint256) {
         //uint ethRate = getEthRate();
-        return (weiAmount/10**5)*rate*(coreRate/10**13);
+        //return (weiAmount/10**5)*rate*(coreRate/10**13);
+        return (weiAmount*rate*coreRate)/(10**36);
     }
 
     function _getTokenAmountWithUsdt(uint256 weiAmount) internal view returns (uint256) {
-        return (weiAmount*10**(18-usdtDecimal))*rate;
+        //return (weiAmount*10**(18-usdtDecimal))*rate;
+        return ((weiAmount*10**(18-usdtDecimal))*rate)/(10**18);
+
     }
 
-    function _convertCoretoUsdt(uint256 weiAmount, uint256 coreRate) internal view returns (uint256) {
-        return (weiAmount/10**(23-usdtDecimal))*(coreRate/10**13);
+    function _convertCoretoUsdt(uint256 weiAmount, uint256 coreRate) internal pure returns (uint256) {
+        //return (weiAmount/10**(23-usdtDecimal))*(coreRate/10**13);
+        return (weiAmount*coreRate)/(10**18);
     }
 
     /**
@@ -646,12 +680,28 @@ contract Crowdsale is Ownable{
      * @param beneficiary Recipient of the token purchase
      */
     function claimTokens(address beneficiary) public {
-        // get token to be claimed
+
         uint256 tokens = contributions[beneficiary];
-        _processPurchase(beneficiary, tokens);
-        emit TokensClaimed( msg.sender, beneficiary, tokens);
-        contributions[beneficiary]= 0;
+        uint256 tokenToBeClaimed;
+
+        // get token to be claimed
+        if(vestingRound[beneficiary] == 3){
+            tokenToBeClaimed=tokens;
+        }
+        else {
+            vestingRound[beneficiary] += 1;
+            vestingTime[beneficiary] = block.timestamp + 30 days;
+            tokenToBeClaimed=getAmountTokenByVestingRate(tokens);
+        }
+        
+        _processPurchase(beneficiary, tokenToBeClaimed);
+        emit TokensClaimed( msg.sender, beneficiary, tokenToBeClaimed);
+        contributions[beneficiary]= tokens-tokenToBeClaimed;
         //_forwardFunds();
+    }
+
+    function getAmountTokenByVestingRate( uint256 _tokens) public view returns (uint256) {
+        return (_tokens*vestingRate)/100;
     }
 
 
