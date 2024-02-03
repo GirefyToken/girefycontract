@@ -508,12 +508,12 @@ contract Crowdsale is Ownable{
     function _getTokenAmount(uint256 weiAmount, uint256 coreRate) internal view returns (uint256) {
         //uint ethRate = getEthRate();
         //return (weiAmount/10**5)*rate*(coreRate/10**13);
-        return (weiAmount*rate*coreRate)/(10**36);
+        return (weiAmount*coreRate)/rate;
     }
 
     function _getTokenAmountWithUsdt(uint256 weiAmount) internal view returns (uint256) {
         //return (weiAmount*10**(18-usdtDecimal))*rate;
-        return ((weiAmount*10**(18-usdtDecimal))*rate)/(10**18);
+        return ((weiAmount*10**(18-usdtDecimal))/rate)*(10**18);
 
     }
 
