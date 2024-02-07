@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract Girefy is ERC20, ERC20Pausable, Ownable, ERC20Permit {
+contract Bitjoy is ERC20, ERC20Pausable, Ownable, ERC20Permit {
     constructor()
         ERC20("sBITJOY", "sBITJOY")
         Ownable(msg.sender)

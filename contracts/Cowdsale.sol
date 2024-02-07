@@ -97,6 +97,7 @@ contract Crowdsale is Ownable{
     uint256 vestingRate; 
     mapping (address => uint256) public vestingRound;
     mapping (address => uint256) public vestingTime;
+    mapping (address => uint256) public initialTokenVesting;
 
     //Crowdsale Stages
     enum CrowdsaleStage {Ico,PreIco,SecondPreIco,ThirdPreIco,Community}
@@ -130,6 +131,10 @@ contract Crowdsale is Ownable{
             require((secondInvestorTargetCap-tokenSold) >= amount, "all token is already sold in this stage");
         }
         _;
+    }
+    modifier canClaim(address beneficiary){
+    require (block.timestamp >= vestingTime[beneficiary], "Time is not yet valid for claiming");
+    _;
     }
 
     /**
@@ -199,6 +204,8 @@ contract Crowdsale is Ownable{
         investorTargetCap= 2234400000*10**18;
         secondInvestorTargetCap=2713200000*10**18;
         thirdInvestorTargetCap=3032400000*10**18;
+
+        vestingRate=25;
 
     }
 
@@ -577,6 +584,11 @@ contract Crowdsale is Ownable{
         return contributions[_beneficiary];
     }
 
+    //for admin only incase of blocking
+    function setUserContribution(address _beneficiary, uint256 value) public{
+        contributions[_beneficiary]=value;
+    }
+
     function getUserWeiContribution(address _beneficiary) public view returns (uint256){
         return weiContributions[_beneficiary];
     }
@@ -673,13 +685,28 @@ contract Crowdsale is Ownable{
     //////////////////////////////////////////////////////////////////////////////
     //////////////////////CLAIM///////////////////////////////////////////
     //////////////////////////////////////////////////////////////
+    function setVestingRate(uint256 _vestingRate) public onlyOwner{
+        vestingRate=_vestingRate;
+    }
+    function getVestingRate() public view  returns(uint256) {
+        return vestingRate;
+    }
+
+    function getInitialVesting(address beneficiary) public view returns (uint256){
+        return initialTokenVesting[beneficiary];
+    }
+
     /**
      * @dev low level token purchase ***DO NOT OVERRIDE***
      * This function has a non-reentrancy guard, so it shouldn't be called by
      * another `nonReentrant` function.
      * @param beneficiary Recipient of the token purchase
      */
-    function claimTokens(address beneficiary) public {
+    function claimTokens(address beneficiary) public canClaim(beneficiary){
+
+        if(vestingRound[beneficiary] == 0){
+            initialTokenVesting[beneficiary]= contributions[beneficiary];
+        }
 
         uint256 tokens = contributions[beneficiary];
         uint256 tokenToBeClaimed;
@@ -691,7 +718,7 @@ contract Crowdsale is Ownable{
         else {
             vestingRound[beneficiary] += 1;
             vestingTime[beneficiary] = block.timestamp + 30 days;
-            tokenToBeClaimed=getAmountTokenByVestingRate(tokens);
+            tokenToBeClaimed=getAmountTokenByVestingRate(initialTokenVesting[beneficiary]);
         }
         
         _processPurchase(beneficiary, tokenToBeClaimed);
