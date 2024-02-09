@@ -717,7 +717,7 @@ contract Crowdsale is Ownable{
         }
         else {
             vestingRound[beneficiary] += 1;
-            vestingTime[beneficiary] = block.timestamp + 30 days;
+            vestingTime[beneficiary] = block.timestamp + 3 minutes;//30 days;
             tokenToBeClaimed=getAmountTokenByVestingRate(initialTokenVesting[beneficiary]);
         }
         

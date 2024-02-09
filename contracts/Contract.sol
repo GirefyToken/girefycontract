@@ -35,3 +35,4 @@ contract Bitjoy is ERC20, ERC20Pausable, Ownable, ERC20Permit {
         super._update(from, to, value);
     }
 }
+
