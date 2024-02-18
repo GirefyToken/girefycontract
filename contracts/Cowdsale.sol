@@ -55,6 +55,10 @@ contract Crowdsale is Ownable{
     //limit time for crowdsale
     uint private timeCrowdsale;
 
+
+    //limit time for crowdsale
+    uint private presaleTimeCrowdsale;
+
     //limit time for crowdsale
     uint private secondTimeCrowdsale;
 
@@ -66,7 +70,6 @@ contract Crowdsale is Ownable{
 
     //targeted token to be sold to get on round 2
     uint256 private secondInvestorTargetCap;
-
 
     //targeted token to be sold to get on round 2
     uint256 private thirdInvestorTargetCap;
@@ -197,13 +200,21 @@ contract Crowdsale is Ownable{
         wallet = _wallet;
         token = _token;
 
-        timeCrowdsale= block.timestamp+86400;
-        secondTimeCrowdsale=timeCrowdsale + 30 days;
-        thirdTimeCrowdsale= secondTimeCrowdsale + 30 days;
+        
+        presaleTimeCrowdsale=block.timestamp + 5 minutes;
+        timeCrowdsale= presaleTimeCrowdsale + 10 minutes;
+        secondTimeCrowdsale=timeCrowdsale + 10 minutes;
+        thirdTimeCrowdsale= secondTimeCrowdsale + 10 minutes;
 
-        investorTargetCap= 2234400000*10**18;
-        secondInvestorTargetCap=2713200000*10**18;
-        thirdInvestorTargetCap=3032400000*10**18;
+        investorTargetCap= 22344*10**18;
+        secondInvestorTargetCap=investorTargetCap+27132*10**18;
+        thirdInvestorTargetCap=secondInvestorTargetCap+30324*10**18;
+
+
+/*
+        investorTargetCap= 2234400*10**18;
+        secondInvestorTargetCap=investorTargetCap+2713200*10**18;
+        thirdInvestorTargetCap=secondInvestorTargetCap+3032400*10**18;*/
 
         vestingRate=25;
 
@@ -333,6 +344,10 @@ contract Crowdsale is Ownable{
         return timeCrowdsale;
     }
 
+    function getPresaleTimeCrowdsale() public view returns (uint) {
+        return presaleTimeCrowdsale;
+    }
+
     function getSecondTimeCrowdsale() public view returns (uint) {
         return secondTimeCrowdsale;
     }
@@ -347,6 +362,9 @@ contract Crowdsale is Ownable{
         }
         else if (_stage == 2){
             secondTimeCrowdsale = _timeCrowdsale;
+        }
+        else if (_stage == 0){
+            presaleTimeCrowdsale = _timeCrowdsale;
         }
         else {
             thirdTimeCrowdsale = _timeCrowdsale;
@@ -717,20 +735,23 @@ contract Crowdsale is Ownable{
         }
         else {
             vestingRound[beneficiary] += 1;
-            vestingTime[beneficiary] = block.timestamp + 3 minutes;//30 days;
+            vestingTime[beneficiary] = block.timestamp + 2 minutes;//30 days;
             tokenToBeClaimed=getAmountTokenByVestingRate(initialTokenVesting[beneficiary]);
         }
         
         _processPurchase(beneficiary, tokenToBeClaimed);
         emit TokensClaimed( msg.sender, beneficiary, tokenToBeClaimed);
         contributions[beneficiary]= tokens-tokenToBeClaimed;
-        //_forwardFunds();
+
+        //for test
+        if(vestingRound[beneficiary] == 3){
+            vestingRound[beneficiary] = 0;
+        }
     }
 
     function getAmountTokenByVestingRate( uint256 _tokens) public view returns (uint256) {
         return (_tokens*vestingRate)/100;
     }
-
 
     //////////////////////////////////////////////////////////////////////
     /* get eth  */
