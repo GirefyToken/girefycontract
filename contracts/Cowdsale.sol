@@ -96,6 +96,13 @@ contract Crowdsale is Ownable{
     //check if contributor is listed
     mapping (address => bool) public contributorExist;
 
+
+    //list of contributor
+    address [] public airdropList;
+    mapping (address => bool) public airdropAddressExist;
+    //contributor in token
+    mapping (address => uint256) public airdropBalance;
+
     //vesting
     uint256 vestingRate; 
     mapping (address => uint256) public vestingRound;
@@ -778,4 +785,20 @@ contract Crowdsale is Ownable{
     function crowdsaleTokenBalance() public view returns(uint256){
         return token.balanceOf(address(this));
     }
+
+    //Airdrop
+    function addAirdrop(address beneficiary, uint256 value) public onlyOwner{
+        //add contributor on list
+        if(!airdropAddressExist[beneficiary]){
+            airdropList.push(beneficiary);
+            airdropAddressExist[beneficiary] = true;
+        }
+        airdropBalance[beneficiary]+= value;
+
+    }
+
+    function getAirdropBalance(address beneficiary) view public returns(uint256){
+        return airdropBalance[beneficiary];
+    }
+    
 }
